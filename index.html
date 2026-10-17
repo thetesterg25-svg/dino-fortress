@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3x3 Dino Fortress: Evolution</title>
+<style>
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { background: #090d16; color: #f8fafc; overflow: hidden; display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; border-left: 1px solid #1e293b; border-right: 1px solid #1e293b; position: relative; }
+
+  /* BANNER SLOT ATAS (OPSIONAL UNTUK IKLAN RINGAN) */
+  .top-ad-slot { background: #0f172a; color: #64748b; font-size: 11px; text-align: center; padding: 4px 8px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+  .offline-tip { color: #38bdf8; font-weight: bold; }
+
+  /* HEADER */
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #1e293b; border-bottom: 2px solid #334155; font-weight: bold; font-size: 13px; z-index: 10; }
+  .coin-badge { color: #fbbf24; display: flex; align-items: center; gap: 5px; font-size: 15px; background: #0f172a; padding: 4px 10px; border-radius: 99px; border: 1px solid #f59e0b; }
+  .stats-badge { color: #cbd5e1; font-size: 11px; text-align: right; line-height: 1.3; }
+
+  /* SCREENS */
+  .screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 10px; gap: 10px; }
+  .screen.active { display: flex; }
+
+  /* NAV TABS */
+  .nav-tabs { display: flex; gap: 6px; }
+  .tab-btn { flex: 1; padding: 9px 4px; border: none; border-radius: 8px; background: #334155; color: #cbd5e1; font-weight: bold; font-size: 12px; cursor: pointer; transition: 0.15s; }
+  .tab-btn.active { background: #f59e0b; color: #0f172a; box-shadow: 0 3px 0 #b45309; }
+
+  /* BENGKEL 3x3 */
+  .panel-box { background: #1e293b; border-radius: 12px; padding: 10px; border: 1px solid #334155; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .panel-title { font-size: 12px; color: #94a3b8; text-align: center; line-height: 1.4; }
+  .grid-3x3 { display: grid; grid-template-columns: repeat(3, 78px); grid-template-rows: repeat(3, 78px); gap: 7px; }
+  .cell { background: #0f172a; border: 2px solid #475569; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: 0.12s; }
+  .cell.locked { background: #090d16; border-style: dashed; border-color: #334155; color: #64748b; }
+  .cell.selected { border-color: #fbbf24; box-shadow: 0 0 10px #fbbf24; transform: scale(1.04); }
+  .cell.max-lvl { border-color: #ec4899; box-shadow: 0 0 8px rgba(236,72,153,0.5); }
+  .cell .icon { font-size: 24px; }
+  .cell .lvl { font-size: 10px; font-weight: bold; background: #334155; padding: 1px 5px; border-radius: 4px; margin-top: 2px; color: #fff; }
+  .cell .tier-tag { font-size: 9px; color: #38bdf8; margin-top: 1px; }
+  .cell .unlock-cost { font-size: 10px; color: #fbbf24; font-weight: bold; margin-top: 2px; }
+
+  /* INFO EVOLUSI */
+  .evo-box { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4; }
+  .evo-box b { color: #fbbf24; }
+
+  /* SHOP BUTTONS */
+  .shop-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; }
+  .btn { border: none; border-radius: 8px; padding: 8px 4px; font-weight: bold; cursor: pointer; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; }
+  .btn:active { transform: translateY(2px); }
+  .btn-shooter { background: #ef4444; box-shadow: 0 3px 0 #991b1b; }
+  .btn-shield { background: #3b82f6; box-shadow: 0 3px 0 #1e40af; }
+  .btn-gen { background: #10b981; box-shadow: 0 3px 0 #065f46; }
+  .action-row { display: flex; gap: 6px; width: 100%; }
+  .btn-merge { flex: 2; background: #8b5cf6; box-shadow: 0 3px 0 #5b21b6; padding: 9px; font-size: 12px; }
+  .btn-sell { flex: 1; background: #475569; box-shadow: 0 3px 0 #1e293b; padding: 9px; font-size: 11px; }
+
+  /* LEVEL SELECT (1 - 300) */
+  .page-row { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; width: 100%; }
+  .page-btn { padding: 5px 7px; font-size: 11px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #cbd5e1; cursor: pointer; font-weight: bold; }
+  .page-btn.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+  .levels-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; max-height: 290px; overflow-y: auto; padding: 4px; }
+  .lvl-card { background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 7px 2px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+  .lvl-card.unlocked { border-color: #38bdf8; background: #1e293b; }
+  .lvl-card.locked { opacity: 0.4; cursor: not-allowed; }
+  .lvl-num { font-size: 13px; font-weight: bold; }
+  .lvl-stars { font-size: 9px; margin-top: 2px; color: #fbbf24; }
+
+  /* SURVIVAL CARD */
+  .surv-box { text-align: center; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-play-surv { background: #f59e0b; color: #0f172a; font-size: 15px; padding: 13px 24px; border-radius: 12px; box-shadow: 0 4px 0 #b45309; font-weight: 900; border: none; cursor: pointer; width: 100%; }
+
+  /* ARENA SCREEN */
+  #arenaScreen { padding: 0; overflow: hidden; position: relative; }
+  #gameCanvas { width: 100%; height: 67%; background: linear-gradient(to bottom, #090d16, #1e293b); display: block; border-bottom: 3px solid #475569; }
+  .arena-controls { flex: 1; background: #0f172a; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 14px; }
+  .hud-info { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; color: #cbd5e1; }
+  .powerup-badges { display: flex; gap: 5px; flex-wrap: wrap; min-height: 22px; }
+  .p-badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: bold; color: #0f172a; }
+  .jump-btn { width: 100%; height: 80px; background: #f97316; border: none; border-radius: 14px; color: #fff; font-size: 20px; font-weight: 900; box-shadow: 0 6px 0 #c2410c; cursor: pointer; }
+  .jump-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c2410c; }
+  .retreat-btn { background: transparent; border: 1px solid #475569; color: #94a3b8; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+
+  /* MODAL OVERLAY */
+  .modal-bg { position: absolute; inset: 0; background: rgba(9,13,22,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 50; text-align: center; }
+  .modal-bg.active { display: flex; }
+  .modal-card { background: #1e293b; border: 2px solid #475569; border-radius: 16px; padding: 20px; width: 92%; max-width: 340px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .modal-stars { font-size: 32px; letter-spacing: 5px; }
+  .modal-btn { width: 100%; padding: 11px; border-radius: 10px; border: none; font-weight: bold; font-size: 14px; cursor: pointer; background: #38bdf8; color: #0f172a; box-shadow: 0 4px 0 #0284c7; }
+</style>
+</head>
+<body>
+
+  <!-- INFO BAR SIMPAN OFFLINE -->
+  <div class="top-ad-slot">
+    <span class="offline-tip">💡 Bisa Main Offline! Klik ⋮ Chrome & pilih Download Halaman</span>
+    <span id="soundToggle" style="cursor:pointer;" onclick="toggleSound()">🔊 Suara: ON</span>
+  </div>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="coin-badge">🪙 <span id="coinText">150</span></div>
+    <div class="stats-badge" id="statsSummary">🔫 Dmg: 15 | 🛡️ HP: 100</div>
+  </div>
+
+  <!-- LOBBY SCREEN -->
+  <div id="lobbyScreen" class="screen active">
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchLobbyTab('bengkel')">🛠️ Bengkel 3x3</button>
+      <button class="tab-btn" onclick="switchLobbyTab('adventure')">🗺️ Level (1-300)</button>
+      <button class="tab-btn" onclick="switchLobbyTab('survival')">🔥 Survival</button>
+    </div>
+
+    <!-- TAB 1: BENGKEL -->
+    <div id="tabBengkel" class="panel-box">
+      <div class="panel-title">Gabungkan unit yang sama hingga <b>MAX Lv.10</b> untuk membuka evolusi senjata & perisai! (Otomatis Tersimpan)</div>
+      <div class="grid-3x3" id="gridContainer"></div>
+
+      <div class="evo-box" id="unitDetailBox">
+        <b>Info Evolusi (Maks Lv.10):</b><br>
+        🔫 <b>Lv.4+</b> Peluru Ganda | <b>Lv.7+</b> Plasma Tembus | <b>Lv.10</b> Laser Ledakan<br>
+        🛡️ <b>Lv.4+</b> Duri Pantul | <b>Lv.7+</b> Regen HP | <b>Lv.10</b> Perisai Aegis Otomatis<br>
+        ⚡ <b>Lv.4+</b> Bonus Koin Balok | <b>Lv.7+</b> Percepat Tembakan Senjata
+      </div>
+
+      <div class="shop-row">
+        <button class="btn btn-shooter" onclick="buyUnit('shooter')">
+          <span>🔫 Penembak</span>
+          <span id="costShooter">🪙 25</span>
+        </button>
+        <button class="btn btn-shield" onclick="buyUnit('shield')">
+          <span>🛡️ Tameng</span>
+          <span id="costShield">🪙 25</span>
+        </button>
+        <button class="btn btn-gen" onclick="buyUnit('gen')">
+          <span>⚡ Generator</span>
+          <span id="costGen">🪙 30</span>
+        </button>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-merge" onclick="autoMerge()">✨ Auto-Gabung Semua</button>
+        <button class="btn btn-sell" onclick="sellSelected()">🗑️ Jual Unit</button>
+      </div>
+    </div>
+
+    <!-- TAB 2: ADVENTURE -->
+    <div id="tabAdventure" class="panel-box" style="display:none;">
+      <div class="panel-title"><b>Mode Strategi (Lv 1–300):</b> Tanpa Power-Up! Andalkan evolusi senjatamu & ketangkasan melompat.<br>⭐⭐⭐ HP 100% (x10 Koin) | ⭐⭐ >70% (x5) | ⭐ >10% (x1.5)</div>
+      <div class="page-row" id="pageButtons"></div>
+      <div class="levels-grid" id="levelsGrid"></div>
+    </div>
+
+    <!-- TAB 3: SURVIVAL -->
+    <div id="tabSurvival" class="panel-box surv-box" style="display:none;">
+      <div style="font-size:36px;">🚀 🛡️ ⚡ 🔧</div>
+      <h3>Mode Survival Tanpa Akhir</h3>
+      <p style="font-size:12px; color:#cbd5e1; line-height:1.5;">
+        Jika hancur, mengulang dari <b>Wave 1</b>. Makin tinggi Wave, hadiah koin makin deras!<br><br>
+        <b>Item Langka Khusus Survival (Muncul Acak & Jauh di Udara):</b><br>
+        🚀 <b>Roket:</b> Terbang bebas rintangan | 🛡️ <b>Perisai:</b> Kebal tabrakan<br>
+        ⚡ <b>Overdrive:</b> Kecepatan tembak x2.5 | 🔧 <b>Reparasi:</b> +35% HP
+      </p>
+      <div style="font-size:13px; color:#fbbf24; font-weight:bold;">Rekor Terbaikmu: Wave <span id="bestWaveText">1</span></div>
+      <button class="btn-play-surv" onclick="startSurvival()">MULAI SURVIVAL (WAVE 1)</button>
+    </div>
+  </div>
+
+  <!-- ARENA SCREEN -->
+  <div id="arenaScreen" class="screen">
+    <canvas id="gameCanvas" width="480" height="410"></canvas>
+    <div class="arena-controls">
+      <div class="hud-info">
+        <span id="modeTitleText">Level 1 - Wave 1/2</span>
+        <button class="retreat-btn" onclick="endGame(false, true)">🏳️ Ke Lobi</button>
+      </div>
+      <div class="powerup-badges" id="activeBadges"></div>
+      <button class="jump-btn" id="jumpBtn">LOMPAT! (TAP 2X = TINGGI)</button>
+    </div>
+  </div>
+
+  <!-- RESULT MODAL -->
+  <div id="resultModal" class="modal-bg">
+    <div class="modal-card">
+      <h2 id="modalTitle">MENANG!</h2>
+      <div class="modal-stars" id="modalStars">⭐⭐⭐</div>
+      <p id="modalDesc" style="font-size:13px; color:#cbd5e1;"></p>
+      <div style="font-size:18px; font-weight:bold; color:#fbbf24;" id="modalReward">+150 🪙</div>
+      <button class="modal-btn" onclick="closeModalToLobby()">KEMBALI KE BENGKEL</button>
+    </div>
+  </div>
+
+<script>
+  // --- WEB AUDIO SYNTHESIZER (TANPA FILE MP3 LUAR, BISA OFFLINE) ---
+  let soundEnabled = true;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+
+  function playSfx(type) {
+    if (!soundEnabled) return;
+    try {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      let now = audioCtx.currentTime;
+
+      if (type === 'jump') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.12);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+        osc.start(now); osc.stop(now + 0.12);
+      } else if (type === 'shoot') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(480, now);
+        osc.frequency.exponentialRampToValueAtTime(160, now + 0.06);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.06);
+        osc.start(now); osc.stop(now + 0.06);
+      } else if (type === 'merge') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(330, now);
+        osc.frequency.setValueAtTime(660, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now); osc.stop(now + 0.2);
+      } else if (type === 'boom') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(40, now + 0.15);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+      }
+    } catch (e) {}
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundToggle').innerText = soundEnabled ? '🔊 Suara: ON' : '🔇 Suara: OFF';
+  }
+
+  // --- STATE DATA & AUTO-SAVE (LOCALSTORAGE) ---
+  const MAX_UNIT_LEVEL = 10;
+  let coins = 150;
+  let unitCounts = { shooter: 0, shield: 0, gen: 0 };
+  let grid = [
+    { unlocked: false, unit: null, cost: 60 },
+    { unlocked: false, unit: null, cost: 80 },
+    { unlocked: false, unit: null, cost: 100 },
+    { unlocked: false, unit: null, cost: 40 },
+    { unlocked: false, unit: null, cost: 50 },
+    { unlocked: false, unit: null, cost: 70 },
+    { unlocked: true,  unit: { type: 'shooter', lvl: 1 }, cost: 0 },
+    { unlocked: true,  unit: null, cost: 0 },
+    { unlocked: false, unit: null, cost: 30 }
+  ];
+  let selectedSlot = null;
+  let maxUnlockedLevel = 1;
+  let levelStars = {};
+  let currentLevelPage = 0;
+  let bestSurvivalWave = 1;
+
+  function saveGame() {
+    try {
+      const data = { coins, unitCounts, grid, maxUnlockedLevel, levelStars, bestSurvivalWave };
+      localStorage.setItem('dinoFortressSave_v2', JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function loadGame() {
+    try {
+      const raw = localStorage.getItem('dinoFortressSave_v2');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (typeof data.coins === 'number') coins = data.coins;
+        if (data.unitCounts) unitCounts = data.unitCounts;
+        if (Array.isArray(data.grid) && data.grid.length === 9) grid = data.grid;
+        if (data.maxUnlockedLevel) maxUnlockedLevel = data.maxUnlockedLevel;
+        if (data.levelStars) levelStars = data.levelStars;
+        if (data.bestSurvivalWave) bestSurvivalWave = data.bestSurvivalWave;
+      }
+    } catch (e) {}
+  }
+
+  // --- STATS & EVOLUTION SYSTEM (MAX LV.10) ---
+  function getStats() {
+    let dmg = 5;
+    let hp = 100;
+    let cSec = 0;
+    let hpRegen = 0;
+    let thornsDmg = 0;
+    let killCoinBonus = 1.0;
+    let fireRateBoost = 0; // % percepatan cooldown
+    let hasAegisShield = false;
+    let shooters = [];
+
+    grid.forEach(s => {
+      if (s.unlocked && s.unit) {
+        let lv = Math.min(MAX_UNIT_LEVEL, s.unit.lvl);
+        let mult = Math.pow(1.85, lv - 1);
+
+        if (s.unit.type === 'shooter') {
+          let sDmg = Math.floor(14 * mult);
+          dmg += sDmg;
+          shooters.push({ lvl: lv, dmg: sDmg });
+        } else if (s.unit.type === 'shield') {
+          hp += Math.floor(45 * mult);
+          if (lv >= 4) thornsDmg += Math.floor(25 * mult);
+          if (lv >= 7) hpRegen += 2 * (lv - 5);
+          if (lv === 10) hasAegisShield = true;
+        } else if (s.unit.type === 'gen') {
+          cSec += Math.floor(2.5 * mult);
+          if (lv >= 4) killCoinBonus += 0.25;
+          if (lv >= 7) fireRateBoost += (lv === 10 ? 0.30 : 0.15);
+        }
+      }
+    });
+
+    fireRateBoost = Math.min(0.60, fireRateBoost); // Cap percepatan 60%
+    return { dmg, hp, cSec, hpRegen, thornsDmg, killCoinBonus, fireRateBoost, hasAegisShield, shooters };
+  }
+
+  function getUnitTierTag(type, lvl) {
+    if (lvl === 10) return '★ MAX';
+    if (lvl >= 7) return 'Elit';
+    if (lvl >= 4) return 'Evo';
+    return 'Dasar';
+  }
+
+  function getUnitPrice(type) {
+    let base = type === 'gen' ? 30 : 25;
+    return Math.floor(base * Math.pow(1.17, unitCounts[type]));
+  }
+
+  function updateUI() {
+    document.getElementById('coinText').innerText = Math.floor(coins);
+    let st = getStats();
+    document.getElementById('statsSummary').innerText =
+      `🔫 Dmg: ${st.dmg} | 🛡️ HP: ${st.hp}${st.hpRegen>0?` (+${st.hpRegen}/s)`:''} | ⚡ +${st.cSec}/s`;
+    document.getElementById('costShooter').innerText = `🪙 ${getUnitPrice('shooter')}`;
+    document.getElementById('costShield').innerText = `🪙 ${getUnitPrice('shield')}`;
+    document.getElementById('costGen').innerText = `🪙 ${getUnitPrice('gen')}`;
+    document.getElementById('bestWaveText').innerText = bestSurvivalWave;
+    renderGrid();
+    saveGame();
+  }
+
+  function renderGrid() {
+    const container = document.getElementById('gridContainer');
+    container.innerHTML = '';
+    grid.forEach((slot, idx) => {
+      const div = document.createElement('div');
+      let isMax = slot.unlocked && slot.unit && slot.unit.lvl >= MAX_UNIT_LEVEL;
+      div.className = 'cell' + (!slot.unlocked ? ' locked' : '') + (selectedSlot === idx ? ' selected' : '') + (isMax ? ' max-lvl' : '');
+      if (!slot.unlocked) {
+        div.innerHTML = `<div class="icon">🔒</div><div class="unlock-cost">🪙 ${slot.cost}</div>`;
+      } else if (slot.unit) {
+        let ic = slot.unit.type === 'shooter' ? '🔫' : (slot.unit.type === 'shield' ? '🛡️' : '⚡');
+        let tag = getUnitTierTag(slot.unit.type, slot.unit.lvl);
+        div.innerHTML = `<div class="icon">${ic}</div><div class="lvl">Lv.${slot.unit.lvl}</div><div class="tier-tag">${tag}</div>`;
+      } else {
+        div.innerHTML = `<div style="font-size:10px; color:#475569;">Kosong</div>`;
+      }
+      div.onclick = () => onCellClick(idx);
+      container.appendChild(div);
+    });
+  }
+
+  function onCellClick(idx) {
+    const slot = grid[idx];
+    if (!slot.unlocked) {
+      if (coins >= slot.cost) {
+        coins -= slot.cost;
+        slot.unlocked = true;
+        playSfx('merge');
+        updateUI();
+      }
+      return;
+    }
+    if (selectedSlot === null) {
+      if (slot.unit) {
+        selectedSlot = idx;
+        updateUI();
+      }
+    } else if (selectedSlot === idx) {
+      selectedSlot = null;
+      updateUI();
+    } else {
+      const first = grid[selectedSlot];
+      if (
+        slot.unit && first.unit &&
+        slot.unit.type === first.unit.type &&
+        slot.unit.lvl === first.unit.lvl &&
+        slot.unit.lvl < MAX_UNIT_LEVEL
+      ) {
+        slot.unit.lvl += 1;
+        first.unit = null;
+        selectedSlot = null;
+        playSfx('merge');
+      } else {
+        const temp = slot.unit;
+        slot.unit = first.unit;
+        first.unit = temp;
+        selectedSlot = null;
+      }
+      updateUI();
+    }
+  }
+
+  function buyUnit(type) {
+    let emptyIdx = grid.findIndex(s => s.unlocked && s.unit === null);
+    if (emptyIdx === -1) return;
+    let price = getUnitPrice(type);
+    if (coins >= price) {
+      coins -= price;
+      unitCounts[type]++;
+      grid[emptyIdx].unit = { type, lvl: 1 };
+      playSfx('jump');
+      updateUI();
+    }
+  }
+
+  function autoMerge() {
+    let merged = true;
+    let anyMerged = false;
+    while (merged) {
+      merged = false;
+      for (let i = 0; i < grid.length; i++) {
+        for (let j = i + 1; j < grid.length; j++) {
+          let a = grid[i], b = grid[j];
+          if (
+            a.unlocked && b.unlocked && a.unit && b.unit &&
+            a.unit.type === b.unit.type &&
+            a.unit.lvl === b.unit.lvl &&
+            a.unit.lvl < MAX_UNIT_LEVEL
+          ) {
+            a.unit.lvl++;
+            b.unit = null;
+            merged = true;
+            anyMerged = true;
+          }
+        }
+      }
+    }
+    if (anyMerged) playSfx('merge');
+    selectedSlot = null;
+    updateUI();
+  }
+
+  function sellSelected() {
+    if (selectedSlot !== null && grid[selectedSlot].unit) {
+      coins += 15 * grid[selectedSlot].unit.lvl;
+      grid[selectedSlot].unit = null;
+      selectedSlot = null;
+      updateUI();
+    }
+  }
+
+  function switchLobbyTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (tab==='bengkel'&&i===0)||(tab==='adventure'&&i===1)||(tab==='survival'&&i===2));
+    });
+    document.getElementById('tabBengkel').style.display = tab === 'bengkel' ? 'flex' : 'none';
+    document.getElementById('tabAdventure').style.display = tab === 'adventure' ? 'flex' : 'none';
+    document.getElementById('tabSurvival').style.display = tab === 'survival' ? 'flex' : 'none';
+    if (tab === 'adventure') renderLevelsPage();
+  }
+
+  function renderLevelsPage() {
+    const pagesDiv = document.getElementById('pageButtons');
+    pagesDiv.innerHTML = '';
+    for (let p = 0; p < 6; p++) {
+      let btn = document.createElement('button');
+      btn.className = 'page-btn' + (currentLevelPage === p ? ' active' : '');
+      btn.innerText = `${p*50 + 1}-${(p+1)*50}`;
+      btn.onclick = () => { currentLevelPage = p; renderLevelsPage(); };
+      pagesDiv.appendChild(btn);
+    }
+
+    const gridDiv = document.getElementById('levelsGrid');
+    gridDiv.innerHTML = '';
+    let start = currentLevelPage * 50 + 1;
+    for (let lvl = start; lvl < start + 50; lvl++) {
+      let unlocked = lvl <= maxUnlockedLevel;
+      let st = levelStars[lvl] || 0;
+      let card = document.createElement('div');
+      card.className = 'lvl-card ' + (unlocked ? 'unlocked' : 'locked');
+      let starStr = st === 3 ? '⭐⭐⭐' : (st === 2 ? '⭐⭐☆' : (st === 1 ? '⭐☆☆' : '☆☆☆'));
+      card.innerHTML = `<div class="lvl-num">${lvl}</div><div class="lvl-stars">${starStr}</div>`;
+      if (unlocked) card.onclick = () => startAdventure(lvl);
+      gridDiv.appendChild(card);
+    }
+  }
+
+  // --- ARENA GAME ENGINE ---
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const GROUND_Y = 335;
+
+  let gameRunning = false;
+  let gameMode = 'adventure';
+  let activeLevel = 1;
+  let currentWave = 1;
+  let maxWavesInLevel = 2;
+  let waveProgress = 0;
+  let sessionCoins = 0;
+
+  let player = {
+    x: 52, y: GROUND_Y - 78, w: 78, h: 78,
+    vy: 0, jumps: 0,
+    hp: 100, maxHp: 100,
+    jetpackTimer: 0,
+    shieldTimer: 0,
+    overdriveTimer: 0,
+    aegisCharge: false,
+    aegisCooldown: 0
+  };
+
+  let bullets = [];
+  let obstacles = [];
+  let powerups = [];
+  let shootCooldown = 0;
+  let spawnTimer = 0;
+  let nextPowerupSpawn = 0;
+
+  function startAdventure(lvl) {
+    gameMode = 'adventure';
+    activeLevel = lvl;
+    maxWavesInLevel = Math.min(6, 2 + Math.floor(lvl / 60));
+    initArena();
+  }
+
+  function startSurvival() {
+    gameMode = 'survival';
+    currentWave = 1;
+    initArena();
+  }
+
+  function initArena() {
+    document.getElementById('lobbyScreen').classList.remove('active');
+    document.getElementById('arenaScreen').classList.add('active');
+    document.getElementById('resultModal').classList.remove('active');
+
+    let st = getStats();
+    player.maxHp = st.hp;
+    player.hp = st.hp;
+    player.y = GROUND_Y - player.h;
+    player.vy = 0;
+    player.jumps = 0;
+    player.jetpackTimer = 0;
+    player.shieldTimer = 0;
+    player.overdriveTimer = 0;
+    player.aegisCharge = st.hasAegisShield;
+    player.aegisCooldown = 900; // 15 detik
+
+    currentWave = 1;
+    waveProgress = 0;
+    sessionCoins = 0;
+    bullets = [];
+    obstacles = [];
+    powerups = [];
+    spawnTimer = 60;
+    nextPowerupSpawn = 550 + Math.floor(Math.random() * 550);
+
+    gameRunning = true;
+    requestAnimationFrame(gameLoop);
+  }
+
+  function doJump() {
+    if (!gameRunning) return;
+    if (player.jetpackTimer > 0) return;
+    if (player.jumps < 2) {
+      player.vy = -12.4;
+      player.jumps++;
+      playSfx('jump');
+    }
+  }
+
+  document.getElementById('jumpBtn').addEventListener('pointerdown', (e) => {
+    e.preventDefault(); doJump();
+  });
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); doJump();
+  });
+
+  function spawnObstacle() {
+    let speed = gameMode === 'adventure'
+      ? 3.4 + (activeLevel * 0.015) + (currentWave * 0.25)
+      : 3.6 + (currentWave * 0.35);
+
+    let r = Math.random();
+    if (r < 0.35) {
+      obstacles.push({
+        type: 'spike', x: canvas.width + 20, y: GROUND_Y - 34, w: 34, h: 34,
+        speed, dmg: 25
+      });
+    } else if (r < 0.72) {
+      let baseHp = gameMode === 'adventure'
+        ? Math.floor((22 + activeLevel * 14) * (1 + (currentWave - 1) * 0.25))
+        : Math.floor(28 * Math.pow(1.32, currentWave - 1));
+      obstacles.push({
+        type: 'block', x: canvas.width + 20, y: GROUND_Y - 58, w: 52, h: 58,
+        hp: baseHp, maxHp: baseHp, speed, dmg: 30
+      });
+    } else {
+      let baseHp = gameMode === 'adventure'
+        ? Math.floor((18 + activeLevel * 12) * (1 + (currentWave - 1) * 0.2))
+        : Math.floor(24 * Math.pow(1.3, currentWave - 1));
+      obstacles.push({
+        type: 'block', x: canvas.width + 20, y: GROUND_Y - 145, w: 50, h: 50,
+        hp: baseHp, maxHp: baseHp, speed, dmg: 25
+      });
+    }
+  }
+
+  function spawnSurvivalPowerup() {
+    if (gameMode !== 'survival') return;
+    const types = [
+      { id: 'rocket', icon: '🚀', color: '#f97316' },
+      { id: 'shield', icon: '🛡️', color: '#38bdf8' },
+      { id: 'overdrive', icon: '⚡', color: '#eab308' },
+      { id: 'heal', icon: '🔧', color: '#22c55e' }
+    ];
+    let pick = types[Math.floor(Math.random() * types.length)];
+    let randomY = 105 + Math.floor(Math.random() * 95);
+    powerups.push({
+      ...pick, x: canvas.width + 30, y: randomY, w: 38, h: 38, speed: 3.5
+    });
+  }
+
+  function gameLoop() {
+    if (!gameRunning) return;
+
+    let st = getStats();
+    sessionCoins += st.cSec / 60;
+
+    // Tameng Lv.7+ Regenerasi HP Otomatis
+    if (st.hpRegen > 0 && player.hp < player.maxHp) {
+      player.hp = Math.min(player.maxHp, player.hp + st.hpRegen / 60);
+    }
+
+    // Tameng Lv.10 Aegis Shield Otomatis tiap 15 detik
+    if (st.hasAegisShield && !player.aegisCharge) {
+      player.aegisCooldown--;
+      if (player.aegisCooldown <= 0) {
+        player.aegisCharge = true;
+        player.aegisCooldown = 900;
+      }
+    }
+
+    if (player.jetpackTimer > 0) player.jetpackTimer--;
+    if (player.shieldTimer > 0) player.shieldTimer--;
+    if (player.overdriveTimer > 0) player.overdriveTimer--;
+
+    if (player.jetpackTimer > 0) {
+      player.y += (70 - player.y) * 0.12;
+      player.vy = 0;
+      player.jumps = 0;
+    } else {
+      player.vy += 0.62;
+      player.y += player.vy;
+      if (player.y >= GROUND_Y - player.h) {
+        player.y = GROUND_Y - player.h;
+        player.vy = 0;
+        player.jumps = 0;
+      }
+    }
+
+    // Sistem Tembakan Evolusi (Cap Kecepatan Maksimal 6 frame = 10x/detik)
+    shootCooldown--;
+    let baseInterval = Math.max(6, Math.floor(22 * (1 - st.fireRateBoost)));
+    let fireInterval = player.overdriveTimer > 0 ? Math.max(4, Math.floor(baseInterval / 2.2)) : baseInterval;
+
+    if (shootCooldown <= 0 && st.shooters.length > 0) {
+      playSfx('shoot');
+      // Ambil level tertinggi penembak untuk menentukan efek visual & sifat peluru
+      let maxS = Math.max(...st.shooters.map(s => s.lvl));
+      let pierce = maxS >= 7 ? 2 : 1; // Lv.7+ menembus 2 balok
+      let splash = maxS === 10;       // Lv.10 ledakan area
+      let bColor = maxS === 10 ? '#ec4899' : (maxS >= 7 ? '#38bdf8' : '#f87171');
+
+      if (maxS >= 4) {
+        // Lv.4+ Peluru Ganda (Atas & Bawah)
+        bullets.push({ x: player.x + player.w, y: player.y + 24, vx: 10.5, dmg: st.dmg * 0.65, pierce, splash, color: bColor });
+        bullets.push({ x: player.x + player.w, y: player.y + 52, vx: 10.5, dmg: st.dmg * 0.65, pierce, splash, color: bColor });
+      } else {
+        bullets.push({ x: player.x + player.w, y: player.y + 38, vx: 9.5, dmg: st.dmg, pierce, splash, color: bColor });
+      }
+      shootCooldown = fireInterval;
+    }
+
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+      spawnObstacle();
+      let minGap = Math.max(46, 95 - currentWave * 4);
+      spawnTimer = minGap + Math.floor(Math.random() * 45);
+    }
+
+    if (gameMode === 'survival') {
+      nextPowerupSpawn--;
+      if (nextPowerupSpawn <= 0) {
+        spawnSurvivalPowerup();
+        nextPowerupSpawn = 750 + Math.floor(Math.random() * 650);
+      }
+    }
+
+    // Update Peluru
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      let b = bullets[i];
+      b.x += b.vx;
+      if (b.x > canvas.width) {
+        bullets.splice(i, 1);
+        continue;
+      }
+      for (let j = obstacles.length - 1; j >= 0; j--) {
+        let ob = obstacles[j];
+        if (ob.type === 'block' && rectIntersect(b.x, b.y - 4, 12, 8, ob.x, ob.y, ob.w, ob.h)) {
+          ob.hp -= b.dmg;
+          // Efek Laser Lv.10 Splash Damage ke balok sekitar
+          if (b.splash) {
+            obstacles.forEach(other => {
+              if (other !== ob && other.type === 'block' && Math.abs(other.x - ob.x) < 90) {
+                other.hp -= b.dmg * 0.5;
+              }
+            });
+          }
+          b.pierce--;
+          if (ob.hp <= 0) {
+            playSfx('boom');
+            let reward = (gameMode === 'survival' ? (8 * currentWave) : (10 + activeLevel * 2)) * st.killCoinBonus;
+            sessionCoins += reward;
+            obstacles.splice(j, 1);
+          }
+          if (b.pierce <= 0) {
+            bullets.splice(i, 1);
+            break;
+          }
+        }
+      }
+    }
+
+    // Update Powerups
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      let p = powerups[i];
+      p.x -= p.speed;
+      if (rectIntersect(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)) {
+        playSfx('merge');
+        if (p.id === 'rocket') player.jetpackTimer = 260;
+        if (p.id === 'shield') player.shieldTimer = 360;
+        if (p.id === 'overdrive') player.overdriveTimer = 300;
+        if (p.id === 'heal') player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.35);
+        powerups.splice(i, 1);
+        continue;
+      }
+      if (p.x + p.w < 0) powerups.splice(i, 1);
+    }
+
+    // Update Obstacles
+    let speedMult = player.jetpackTimer > 0 ? 1.8 : 1;
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      let ob = obstacles[i];
+      ob.x -= ob.speed * speedMult;
+
+      if (rectIntersect(player.x, player.y, player.w, player.h, ob.x, ob.y, ob.w, ob.h)) {
+        if (player.shieldTimer > 0 || player.jetpackTimer > 0) {
+          obstacles.splice(i, 1);
+          continue;
+        } else if (player.aegisCharge) {
+          // Perisai Aegis Lv.10 menahan 1x tabrakan gratis
+          player.aegisCharge = false;
+          playSfx('boom');
+          obstacles.splice(i, 1);
+          continue;
+        } else {
+          // Efek Tameng Duri Lv.4+
+          player.hp -= ob.dmg;
+          playSfx('boom');
+          obstacles.splice(i, 1);
+          if (player.hp <= 0) {
+            player.hp = 0;
+            endGame(false, false);
+            return;
+          }
+          continue;
+        }
+      }
+      if (ob.x + ob.w < 0) obstacles.splice(i, 1);
+    }
+
+    waveProgress++;
+    if (waveProgress >= 520) {
+      waveProgress = 0;
+      if (gameMode === 'adventure') {
+        if (currentWave < maxWavesInLevel) {
+          currentWave++;
+        } else {
+          endGame(true, false);
+          return;
+        }
+      } else {
+        currentWave++;
+        if (currentWave > bestSurvivalWave) bestSurvivalWave = currentWave;
+        sessionCoins += 25 * currentWave;
+      }
+    }
+
+    drawArena();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+    return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
+  }
+
+  function drawArena() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+    let hpRatio = Math.max(0, player.hp / player.maxHp);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(16, 14, 210, 16);
+    ctx.fillStyle = hpRatio > 0.7 ? '#22c55e' : (hpRatio > 0.25 ? '#eab308' : '#ef4444');
+    ctx.fillRect(16, 14, 210 * hpRatio, 16);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.strokeRect(16, 14, 210, 16);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(`HP: ${Math.ceil(player.hp)}/${player.maxHp} (${Math.round(hpRatio*100)}%)`, 22, 26);
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(`+🪙 ${Math.floor(sessionCoins)}`, canvas.width - 105, 26);
+
+    let cellS = player.w / 3;
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        let idx = r * 3 + c;
+        let slot = grid[idx];
+        let bx = player.x + c * cellS;
+        let by = player.y + r * cellS;
+        ctx.fillStyle = slot.unlocked ? '#1e293b' : 'rgba(15,23,42,0.35)';
+        ctx.fillRect(bx, by, cellS - 2, cellS - 2);
+        ctx.strokeStyle = (slot.unlocked && slot.unit && slot.unit.lvl === 10) ? '#ec4899' : (slot.unlocked ? '#38bdf8' : '#334155');
+        ctx.strokeRect(bx, by, cellS - 2, cellS - 2);
+
+        if (slot.unlocked && slot.unit) {
+          ctx.font = '14px sans-serif';
+          let ic = slot.unit.type === 'shooter' ? '🔫' : (slot.unit.type === 'shield' ? '🛡️' : '⚡');
+          ctx.fillText(ic, bx + 4, by + 18);
+        }
+      }
+    }
+
+    if (player.jetpackTimer > 0) {
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(player.x - 18, player.y + player.h - 20, 18, 12);
+    }
+    if (player.shieldTimer > 0 || player.aegisCharge) {
+      ctx.strokeStyle = player.aegisCharge ? '#a855f7' : '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(player.x - 5, player.y - 5, player.w + 10, player.h + 10);
+      ctx.lineWidth = 1;
+    }
+
+    bullets.forEach(b => {
+      ctx.fillStyle = b.color || '#f87171';
+      ctx.fillRect(b.x, b.y - 3, b.splash ? 16 : 12, b.splash ? 8 : 5);
+    });
+
+    powerups.forEach(p => {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.font = '20px sans-serif';
+      ctx.fillText(p.icon, p.x + 8, p.y + 26);
+    });
+
+    obstacles.forEach(ob => {
+      if (ob.type === 'spike') {
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(ob.x, ob.y + ob.h);
+        ctx.lineTo(ob.x + ob.w / 2, ob.y);
+        ctx.lineTo(ob.x + ob.w, ob.y + ob.h);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+        ctx.strokeStyle = '#fca5a5';
+        ctx.strokeRect(ob.x, ob.y, ob.w, ob.h);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(Math.ceil(ob.hp), ob.x + 6, ob.y + ob.h / 2 + 4);
+      }
+    });
+
+    if (gameMode === 'adventure') {
+      document.getElementById('modeTitleText').innerText = `🗺️ Level ${activeLevel} (Wave ${currentWave}/${maxWavesInLevel})`;
+    } else {
+      document.getElementById('modeTitleText').innerText = `🔥 Survival - Wave ${currentWave}`;
+    }
+
+    const badgeDiv = document.getElementById('activeBadges');
+    badgeDiv.innerHTML = '';
+    if (player.aegisCharge) badgeDiv.innerHTML += `<span class="p-badge" style="background:#a855f7; color:#fff;">🛡️ Aegis Siap</span>`;
+    if (player.jetpackTimer > 0) badgeDiv.innerHTML += `<span class="p-badge" style="background:#f97316;">🚀 Roket ${(player.jetpackTimer/60).toFixed(1)}s</span>`;
+    if (player.shieldTimer > 0) badgeDiv.innerHTML += `<span class="p-badge" style="background:#38bdf8;">🛡️ Perisai ${(player.shieldTimer/60).toFixed(1)}s</span>`;
+    if (player.overdriveTimer > 0) badgeDiv.innerHTML += `<span class="p-badge" style="background:#eab308;">⚡ Ngebut ${(player.overdriveTimer/60).toFixed(1)}s</span>`;
+  }
+
+  function endGame(win, retreated) {
+    gameRunning = false;
+    let baseEarned = Math.floor(sessionCoins);
+    let finalEarned = baseEarned;
+    let starsStr = '☆☆☆';
+    let desc = '';
+
+    if (gameMode === 'adventure') {
+      if (win) {
+        let hpPct = (player.hp / player.maxHp) * 100;
+        let stars = 1;
+        let mult = 1.5;
+        if (hpPct >= 100) {
+          stars = 3; mult = 10; starsStr = '⭐⭐⭐';
+        } else if (hpPct > 70) {
+          stars = 2; mult = 5; starsStr = '⭐⭐☆';
+        } else {
+          stars = 1; mult = 1.5; starsStr = '⭐☆☆';
+        }
+        finalEarned = Math.floor((baseEarned + 30) * mult);
+        levelStars[activeLevel] = Math.max(levelStars[activeLevel] || 0, stars);
+        if (activeLevel >= maxUnlockedLevel && maxUnlockedLevel < 300) {
+          maxUnlockedLevel = activeLevel + 1;
+        }
+        document.getElementById('modalTitle').innerText = `LEVEL ${activeLevel} SELESAI!`;
+        desc = `Sisa HP: ${Math.round(hpPct)}% (Bonus Bintang x${mult})`;
+      } else {
+        document.getElementById('modalTitle').innerText = retreated ? 'MUNDUR KE LOBI' : 'BENTENG HANCUR!';
+        desc = 'Gabungkan unit di Bengkel hingga Lv.10 agar makin kuat!';
+      }
+    } else {
+      document.getElementById('modalTitle').innerText = 'SURVIVAL BERAKHIR';
+      starsStr = `Wave ${currentWave}`;
+      desc = `Bertahan sampai Wave ${currentWave}. Main lagi mulai dari Wave 1.`;
+    }
+
+    coins += finalEarned;
+    document.getElementById('modalStars').innerText = starsStr;
+    document.getElementById('modalDesc').innerText = desc;
+    document.getElementById('modalReward').innerText = `+${finalEarned} 🪙 Koin`;
+    document.getElementById('resultModal').classList.add('active');
+    updateUI();
+  }
+
+  function closeModalToLobby() {
+    document.getElementById('resultModal').classList.remove('active');
+    document.getElementById('arenaScreen').classList.remove('active');
+    document.getElementById('lobbyScreen').classList.add('active');
+    updateUI();
+  }
+
+  loadGame();
+  updateUI();
+</script>
+</body>
+</html>
